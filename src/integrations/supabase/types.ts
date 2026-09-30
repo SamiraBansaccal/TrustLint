@@ -145,6 +145,21 @@ export type Database = {
         Returns: boolean
       }
       is_team: { Args: { _user_id: string }; Returns: boolean }
+      team_reference_audit: {
+        Args: never
+        Returns: {
+          scope: string
+          topic_param: string
+          updated_by_email: string
+        }[]
+      }
+      team_resolution_audit: {
+        Args: never
+        Returns: {
+          doc_id: string
+          updated_by_email: string
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "legal"
