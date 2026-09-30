@@ -103,7 +103,6 @@ function Portal() {
       doc_id: docId,
       body: parsed.data,
       author_id: session!.user.id,
-      author_email: session!.user.email ?? null,
     });
     if (error) { toast.error("Could not save the note."); return; }
     setDrafts((d) => ({ ...d, [docId]: "" }));
