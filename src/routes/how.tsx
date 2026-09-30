@@ -163,6 +163,25 @@ function HowPage() {
 
         <Section title="Where AI is used">
           <p>
+            An AI model reads each document and extracts its key facts (parameter, value, exact
+            sentence). Facts whose sentence is not found word for word are discarded. The trust rules
+            then run on these facts.
+          </p>
+          <ol className="grid gap-2 sm:grid-cols-3">
+            {[
+              "Document",
+              "AI extracts facts with exact quotes",
+              "Deterministic rules flag issues",
+            ].map((step, i) => (
+              <li key={step} className="flex items-center gap-2 rounded-lg border border-border bg-muted/50 px-3 py-2 text-xs font-medium">
+                <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                  {i + 1}
+                </span>
+                {step}
+              </li>
+            ))}
+          </ol>
+          <p>
             AI does exactly one thing: extracting claims from a document, server-side. It never
             decides whether something is wrong — all checks are pure deterministic functions.
           </p>

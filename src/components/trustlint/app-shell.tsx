@@ -3,7 +3,6 @@ import { LogIn, RotateCcw, ScanSearch, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { useTrustLint } from "@/lib/trustlint-context";
 import { useTeam } from "@/lib/team";
-import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
 
 const NAV = [
@@ -14,16 +13,14 @@ const NAV = [
 ] as const;
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { dataset, setDataset, resetSeed } = useTrustLint();
+  const { resetSeed } = useTrustLint();
   const { session } = useTeam();
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <div className="flex items-center justify-center gap-2 border-b border-warn/30 bg-warn/10 px-4 py-1.5 text-center">
         <span className="size-2 shrink-0 animate-pulse rounded-full bg-warn" />
         <span className="text-[11px] font-semibold uppercase tracking-wider text-warn-foreground">
-          {dataset === "demo"
-            ? "Proof of concept – all documents, people and values are fictional"
-            : "Real 2026 reference figures · documents and people are fictional"}
+          Proof of concept – all documents, people and values are fictional.
         </span>
       </div>
 
@@ -40,27 +37,6 @@ export function AppShell({ children }: { children: ReactNode }) {
               </span>
             </Link>
             <div className="flex flex-wrap items-center justify-end gap-2">
-              <div
-                className="flex rounded-lg bg-brand-foreground/10 p-1"
-                role="group"
-                aria-label="Data set"
-              >
-                {(["demo", "real"] as const).map((d) => (
-                  <button
-                    key={d}
-                    type="button"
-                    onClick={() => setDataset(d)}
-                    className={cn(
-                      "rounded-md px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide transition-colors",
-                      dataset === d
-                        ? "bg-brand-foreground text-brand"
-                        : "text-brand-muted hover:text-brand-foreground",
-                    )}
-                  >
-                    {d === "demo" ? "Demo" : "Real 2026"}
-                  </button>
-                ))}
-              </div>
               <button
                 type="button"
                 onClick={() => {

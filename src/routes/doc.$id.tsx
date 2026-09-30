@@ -32,7 +32,7 @@ export const Route = createFileRoute("/doc/$id")({
 });
 
 function TrustCard({ doc, label }: { doc: Doc; label: string }) {
-  const { analysis } = useTrustLint();
+  const { analysis, liveDocs } = useTrustLint();
   const t = analysis.trustByDoc[doc.id]!;
   return (
     <div className="rounded-lg border border-border bg-card p-4">
@@ -189,6 +189,12 @@ function DocumentDetail() {
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Extracted claims</CardTitle>
+              <p className="text-xs text-muted-foreground">
+                Source:{" "}
+                <span className="font-semibold text-foreground">
+                  {liveDocs.includes(doc.id) ? "Extracted live by AI" : "Pre-verified facts"}
+                </span>
+              </p>
             </CardHeader>
             <CardContent className="overflow-x-auto p-0">
               <table className="w-full min-w-[560px] text-sm">
