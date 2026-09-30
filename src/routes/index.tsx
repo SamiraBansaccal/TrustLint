@@ -17,6 +17,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { StatusDot } from "@/components/trustlint/status";
 import { IssueBadge } from "@/components/trustlint/issue-badge";
 import { useTrustLint } from "@/lib/trustlint-context";
+import { RESOLUTION_LABEL, resolutionOf, useTeam, type ResolutionStatus } from "@/lib/team";
+import { ResolutionBadge } from "@/components/trustlint/resolution-badge";
 import { extractClaims } from "@/lib/extract-client";
 import { RULES, formatDate } from "@/lib/checks";
 import type { Claim, IssueKind } from "@/data/types";
@@ -59,6 +61,8 @@ function Dashboard() {
   const [status, setStatus] = useState("all");
   const [country, setCountry] = useState("all");
   const [kind, setKind] = useState("all");
+  const [resolution, setResolutionFilter] = useState("all");
+  const { resolutions } = useTeam();
   const [running, setRunning] = useState(false);
   const [progress, setProgress] = useState(0);
 
@@ -69,12 +73,14 @@ function Dashboard() {
         if (country !== "all" && (doc.country || "unknown") !== country) return false;
         if (kind !== "all" && !analysis.issuesByDoc[doc.id]!.some((i) => i.kind === kind))
           return false;
+        if (resolution !== "all" && resolutionOf(resolutions, doc.id) !== resolution) return false;
         return true;
       }),
-    [analysis, status, country, kind],
+    [analysis, status, country, kind, resolution, resolutions],
   );
 
   const critical = analysis.flagged.filter((d) => analysis.statusByDoc[d.id] === "red").length;
+  const fixedCount = analysis.flagged.filter((d) => resolutionOf(resolutions, d.id) === "fixed").length;
   const contacts = new Set(analysis.flagged.map((d) => analysis.whoToAskByDoc[d.id]!.person.id));
 
   const rerun = async () => {
@@ -118,11 +124,12 @@ function Dashboard() {
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <Kpi label="Documents scanned" value={docs.length} />
         <Kpi label="Flagged" value={analysis.flagged.length} hint="at least one issue" />
         <Kpi label="Critical" value={critical} hint="red – do not trust" />
         <Kpi label="People to notify" value={contacts.size} hint="distinct contacts" />
+        <Kpi label="Resolved" value={`${fixedCount}/${analysis.flagged.length}`} hint="marked fixed by the legal team" />
       </div>
 
       <Card>
@@ -154,6 +161,19 @@ function Dashboard() {
                 <SelectItem value="unknown">Unknown</SelectItem>
               </SelectContent>
             </Select>
+            <Select value={resolution} onValueChange={setResolutionFilter}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Resolution">
+                  {resolution === "all" ? "Any resolution" : RESOLUTION_LABEL[resolution as ResolutionStatus]}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Any resolution</SelectItem>
+                <SelectItem value="open">Open</SelectItem>
+                <SelectItem value="in_progress">In progress</SelectItem>
+                <SelectItem value="fixed">Fixed</SelectItem>
+              </SelectContent>
+            </Select>
             <Select value={kind} onValueChange={setKind}>
               <SelectTrigger className="w-48">
                 <SelectValue placeholder="Issue">
@@ -179,6 +199,7 @@ function Dashboard() {
                   <th className="px-5 py-2.5 font-medium">Document</th>
                   <th className="px-3 py-2.5 font-medium">Owner</th>
                   <th className="px-3 py-2.5 font-medium">Issues</th>
+                  <th className="px-3 py-2.5 font-medium">Resolution</th>
                   <th className="px-3 py-2.5 text-right font-medium">Views/mo</th>
                   <th className="px-5 py-2.5 text-right font-medium">Priority</th>
                 </tr>
@@ -230,6 +251,9 @@ function Dashboard() {
                           ))}
                         </div>
                       </td>
+                      <td className="px-3 py-3 align-top">
+                        <ResolutionBadge status={resolutionOf(resolutions, doc.id)} />
+                      </td>
                       <td className="px-3 py-3 text-right align-top font-mono text-xs">
                         {doc.views_per_month}
                       </td>
@@ -241,7 +265,7 @@ function Dashboard() {
                 })}
                 {filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-5 py-10 text-center text-sm text-muted-foreground">
+                    <td colSpan={6} className="px-5 py-10 text-center text-sm text-muted-foreground">
                       No documents match these filters.
                     </td>
                   </tr>

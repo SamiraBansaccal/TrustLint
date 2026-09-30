@@ -12,6 +12,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { TrustLintProvider } from "@/lib/trustlint-context";
+import { TeamProvider } from "@/lib/team";
 import { AppShell } from "@/components/trustlint/app-shell";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
@@ -134,6 +135,7 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <TeamProvider>
       <TrustLintProvider>
         <TooltipProvider delayDuration={150}>
           <AppShell>
@@ -143,6 +145,7 @@ function RootComponent() {
           <Toaster richColors position="top-right" />
         </TooltipProvider>
       </TrustLintProvider>
+      </TeamProvider>
     </QueryClientProvider>
   );
 }

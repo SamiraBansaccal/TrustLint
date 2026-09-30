@@ -10,15 +10,27 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as CheckRouteImport } from './routes/check'
 import { Route as HowRouteImport } from './routes/how'
 import { Route as ReferenceRouteImport } from './routes/reference'
+import { Route as AuthenticatedPortalRouteImport } from './routes/_authenticated/portal'
 import { Route as ApiExtractClaimsRouteImport } from './routes/api/extract-claims'
 import { Route as DocIdRouteImport } from './routes/doc.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CheckRoute = CheckRouteImport.update({
@@ -36,6 +48,11 @@ const ReferenceRoute = ReferenceRouteImport.update({
   path: '/reference',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedPortalRoute = AuthenticatedPortalRouteImport.update({
+  id: '/portal',
+  path: '/portal',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const ApiExtractClaimsRoute = ApiExtractClaimsRouteImport.update({
   id: '/api/extract-claims',
   path: '/api/extract-claims',
@@ -49,48 +66,74 @@ const DocIdRoute = DocIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/check': typeof CheckRoute
   '/how': typeof HowRoute
   '/reference': typeof ReferenceRoute
+  '/portal': typeof AuthenticatedPortalRoute
   '/api/extract-claims': typeof ApiExtractClaimsRoute
   '/doc/$id': typeof DocIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/check': typeof CheckRoute
   '/how': typeof HowRoute
   '/reference': typeof ReferenceRoute
+  '/portal': typeof AuthenticatedPortalRoute
   '/api/extract-claims': typeof ApiExtractClaimsRoute
   '/doc/$id': typeof DocIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/auth': typeof AuthRoute
   '/check': typeof CheckRoute
   '/how': typeof HowRoute
   '/reference': typeof ReferenceRoute
+  '/_authenticated/portal': typeof AuthenticatedPortalRoute
   '/api/extract-claims': typeof ApiExtractClaimsRoute
   '/doc/$id': typeof DocIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/check' | '/how' | '/reference' | '/api/extract-claims' | '/doc/$id'
-  fileRoutesByTo: FileRoutesByTo
-  to:
-    '/' | '/check' | '/how' | '/reference' | '/api/extract-claims' | '/doc/$id'
-  id:
-    | '__root__'
     | '/'
+    | '/auth'
     | '/check'
     | '/how'
     | '/reference'
+    | '/portal'
+    | '/api/extract-claims'
+    | '/doc/$id'
+  fileRoutesByTo: FileRoutesByTo
+  to:
+    | '/'
+    | '/auth'
+    | '/check'
+    | '/how'
+    | '/reference'
+    | '/portal'
+    | '/api/extract-claims'
+    | '/doc/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/auth'
+    | '/check'
+    | '/how'
+    | '/reference'
+    | '/_authenticated/portal'
     | '/api/extract-claims'
     | '/doc/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AuthRoute: typeof AuthRoute
   CheckRoute: typeof CheckRoute
   HowRoute: typeof HowRoute
   ReferenceRoute: typeof ReferenceRoute
@@ -105,6 +148,20 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/check': {
@@ -128,6 +185,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReferenceRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/portal': {
+      id: '/_authenticated/portal'
+      path: '/portal'
+      fullPath: '/portal'
+      preLoaderRoute: typeof AuthenticatedPortalRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/api/extract-claims': {
       id: '/api/extract-claims'
       path: '/api/extract-claims'
@@ -145,8 +209,21 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedPortalRoute: typeof AuthenticatedPortalRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedPortalRoute: AuthenticatedPortalRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AuthRoute: AuthRoute,
   CheckRoute: CheckRoute,
   HowRoute: HowRoute,
   ReferenceRoute: ReferenceRoute,

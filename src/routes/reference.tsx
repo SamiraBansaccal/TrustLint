@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { DraftMessageButton } from "@/components/trustlint/draft-message";
 import { useTrustLint } from "@/lib/trustlint-context";
 import { formatDate } from "@/lib/checks";
+import { RealReferenceTable } from "@/components/trustlint/real-reference-table";
 
 export const Route = createFileRoute("/reference")({
   head: () => ({
@@ -37,6 +38,7 @@ interface Impact {
 function ReferencePage() {
   const { reference, setReferenceValue, simulateLegalWatch, resetSeed, analysis, docs, claims } =
     useTrustLint();
+  const { dataset } = useTrustLint();
   const [impact, setImpact] = useState<Impact | null>(null);
 
   const runLegalWatch = () => {
@@ -76,7 +78,7 @@ function ReferencePage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={runLegalWatch}>
+          <Button onClick={runLegalWatch} disabled={dataset === "real"} title={dataset === "real" ? "Switch to demo figures to simulate an alert" : undefined}>
             <Siren className="size-4" />
             Simulate Legal Watch alert
           </Button>
@@ -139,6 +141,7 @@ function ReferencePage() {
         </Card>
       ) : null}
 
+      {dataset === "real" ? <RealReferenceTable /> : (
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Reference entries</CardTitle>
@@ -182,6 +185,7 @@ function ReferencePage() {
           </table>
         </CardContent>
       </Card>
+      )}
       <p className="text-xs text-muted-foreground">
         Every change recomputes all checks immediately. Documents whose status got worse keep a NEW
         badge on the dashboard until you reset.

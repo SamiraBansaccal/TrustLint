@@ -5,8 +5,13 @@ import { REFERENCE } from "@/data/reference";
 import { PEOPLE } from "@/data/people";
 import type { Claim, Doc, ReferenceEntry, Status } from "@/data/types";
 import { analyze, STATUS_RANK, type AnalysisResult } from "@/lib/checks";
+import { useTeam } from "@/lib/team";
+
+export type Dataset = "demo" | "real";
 
 interface TrustLintState {
+  dataset: Dataset;
+  setDataset: (d: Dataset) => void;
   docs: Doc[];
   claims: Claim[];
   reference: ReferenceEntry[];
@@ -28,10 +33,13 @@ export function TrustLintProvider({ children }: { children: ReactNode }) {
   const [claims, setClaims] = useState<Claim[]>(SEED_CLAIMS);
   const [reference, setReference] = useState<ReferenceEntry[]>(REFERENCE);
   const [newBadges, setNewBadges] = useState<string[]>([]);
+  const [dataset, setDataset] = useState<Dataset>("demo");
+  const { realReference } = useTeam();
+  const activeReference: ReferenceEntry[] = dataset === "real" ? realReference : reference;
 
   const analysis = useMemo(
-    () => analyze({ docs, claims, reference, people: PEOPLE }),
-    [docs, claims, reference],
+    () => analyze({ docs, claims, reference: activeReference, people: PEOPLE }),
+    [docs, claims, activeReference],
   );
 
   const statusesNow = useCallback(
@@ -104,9 +112,11 @@ export function TrustLintProvider({ children }: { children: ReactNode }) {
   const clearNewBadges = useCallback(() => setNewBadges([]), []);
 
   const value: TrustLintState = {
+    dataset,
+    setDataset,
     docs,
     claims,
-    reference,
+    reference: activeReference,
     people: PEOPLE,
     analysis,
     newBadges,
