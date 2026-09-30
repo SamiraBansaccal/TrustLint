@@ -56,14 +56,14 @@ export function AppShell({ children }: { children: ReactNode }) {
                   toast.success("Demo reset: seed documents, claims and reference values restored.");
                 }}
                 title="Reset demo"
-                className="inline-flex items-center gap-1.5 rounded-full border border-brand-foreground/25 px-3 py-1.5 text-xs font-medium hover:bg-brand-foreground/10"
+                className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-brand-foreground/25 px-3 py-1.5 text-xs font-medium hover:bg-brand-foreground/10"
               >
                 <RotateCcw className="size-3.5" />
                 <span className="hidden sm:inline">Reset demo</span>
               </button>
               <Link
                 to={session ? "/portal" : "/auth"}
-                className="inline-flex items-center gap-1.5 rounded-full bg-brand-foreground/15 px-3 py-1.5 text-xs font-medium hover:bg-brand-foreground/25"
+                className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full bg-brand-foreground/15 px-3 py-1.5 text-xs font-medium hover:bg-brand-foreground/25"
               >
                 {session ? <ShieldCheck className="size-3.5" /> : <LogIn className="size-3.5" />}
                 <span className="hidden sm:inline">{session ? "Legal portal" : "Legal team sign in"}</span>
