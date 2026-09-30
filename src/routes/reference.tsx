@@ -78,7 +78,7 @@ function ReferencePage() {
             against it, not against each other.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button onClick={runLegalWatch} disabled={dataset === "real"} title={dataset === "real" ? "Switch to demo figures to simulate an alert" : undefined}>
             <Siren className="size-4" />
             Simulate Legal Watch alert
