@@ -69,14 +69,25 @@ export function TeamProvider({ children }: { children: ReactNode }) {
   }, [session?.user.id, refreshRole]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadResolutions = useCallback(async () => {
-    const { data } = await supabase.from("resolutions").select("*");
+    const { data: auth } = await supabase.auth.getSession();
+    const cols = auth.session ? "doc_id, status, updated_at, updated_by_email" : "doc_id, status, updated_at";
+    const { data } = await supabase.from("resolutions").select(cols);
     const map: Record<string, Resolution> = {};
-    for (const r of data ?? []) map[r.doc_id] = r as Resolution;
+    for (const r of (data ?? []) as unknown as Resolution[]) map[r.doc_id] = { ...r, updated_by_email: r.updated_by_email ?? null };
     setResolutions(map);
   }, []);
 
   const loadReference = useCallback(async () => {
-    const { data } = await supabase.from("reference_values").select("*").order("topic_param");
+    const { data: auth } = await supabase.auth.getSession();
+    const base = "topic_param, scope, value, source, source_url, effective_date";
+    const { data: raw } = await supabase
+      .from("reference_values")
+      .select(auth.session ? `${base}, updated_by_email` : base)
+      .order("topic_param");
+    const data = (raw ?? []) as unknown as Array<{
+      topic_param: string; scope: string; value: string; source: string;
+      source_url: string | null; effective_date: string; updated_by_email?: string | null;
+    }>;
     setRealReference(
       (data ?? []).map((r) => ({
         topic_param: r.topic_param,
@@ -85,7 +96,7 @@ export function TeamProvider({ children }: { children: ReactNode }) {
         source: r.source,
         source_url: r.source_url,
         effective_date: r.effective_date,
-        updated_by_email: r.updated_by_email,
+        updated_by_email: r.updated_by_email ?? null,
       })),
     );
     setRealLoaded(true);
@@ -106,15 +117,13 @@ export function TeamProvider({ children }: { children: ReactNode }) {
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [loadResolutions, loadReference]);
+  }, [loadResolutions, loadReference, session?.user.id]);
 
   const setResolution = useCallback(
     async (docId: string, status: ResolutionStatus) => {
       const { error } = await supabase.from("resolutions").upsert({
         doc_id: docId,
         status,
-        updated_by_email: session?.user.email ?? null,
-        updated_at: new Date().toISOString(),
       });
       if (error) throw new Error("Could not save the status.");
       await loadResolutions();
@@ -128,8 +137,6 @@ export function TeamProvider({ children }: { children: ReactNode }) {
         .from("reference_values")
         .update({
           value,
-          updated_by_email: session?.user.email ?? null,
-          updated_at: new Date().toISOString(),
         })
         .eq("topic_param", topic_param)
         .eq("scope", scope);

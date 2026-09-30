@@ -10,4 +10,4 @@
 <!-- LOVABLE:END -->
 
 - Resolutions, notes, invites and real reference values live in Lovable Cloud tables; demo data stays in src/data and the in-memory context. Why: keep the offline demo working while real data is shared and persistent.
-- Portal access = first signed-in user becomes admin via claim_access(); others need an invite row. Why: invite-only without a separate admin setup step.
+- Portal access: admin is granted manually (never automatically); others need an invite row AND a confirmed e-mail; actor e-mails are stamped by the stamp_actor trigger, never by the client; anon cannot read e-mail columns. Why: security review (Aikido) found first-signup-admin, unverified-email and spoofed-actor flaws.
