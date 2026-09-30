@@ -26,7 +26,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <header className="sticky top-0 z-30 bg-brand text-brand-foreground shadow-md">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 py-3 sm:py-4">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 py-3 sm:py-4 xl:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] xl:gap-6 xl:py-0">
             <Link to="/" className="flex min-w-0 items-center gap-2.5">
               <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand-foreground/15">
                 <ScanSearch className="size-5" />
@@ -36,6 +36,18 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <span className="block truncate text-xs text-brand-muted">Knowledge you can trust</span>
               </span>
             </Link>
+            <nav aria-label="Main" className="hidden items-center gap-5 self-stretch text-sm font-medium xl:flex">
+              {NAV.map((item) => (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  activeOptions={{ exact: item.to === "/" }}
+                  className="flex h-full items-center whitespace-nowrap border-b-2 border-transparent py-5 text-brand-muted transition-colors hover:text-brand-foreground [&.active]:border-brand-foreground [&.active]:text-brand-foreground"
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
             <div className="flex flex-wrap items-center justify-end gap-2">
               <button
                 type="button"
@@ -58,7 +70,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               </Link>
             </div>
           </div>
-          <nav className="no-scrollbar -mb-px flex gap-6 overflow-x-auto border-t border-brand-foreground/10 text-sm font-medium">
+          <nav className="no-scrollbar -mb-px flex gap-6 xl:hidden overflow-x-auto border-t border-brand-foreground/10 text-sm font-medium">
             {NAV.map((item) => (
               <Link
                 key={item.to}
