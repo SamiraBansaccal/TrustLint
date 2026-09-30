@@ -70,7 +70,7 @@ function Row({ entry, canEdit }: { entry: RealReferenceEntry; canEdit: boolean }
 
   const save = async () => {
     const parsed = valueSchema.safeParse(value);
-    if (!parsed.success) return toast.error(parsed.error.issues[0]!.message);
+    if (!parsed.success) { toast.error(parsed.error.issues[0]!.message); return; }
     setSaving(true);
     try {
       await saveRealReference(entry.topic_param, entry.scope, parsed.data);

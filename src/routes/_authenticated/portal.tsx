@@ -98,14 +98,14 @@ function Portal() {
 
   const addNote = async (docId: string) => {
     const parsed = noteSchema.safeParse(drafts[docId] ?? "");
-    if (!parsed.success) return toast.error(parsed.error.issues[0]!.message);
+    if (!parsed.success) { toast.error(parsed.error.issues[0]!.message); return; }
     const { error } = await supabase.from("resolution_notes").insert({
       doc_id: docId,
       body: parsed.data,
       author_id: session!.user.id,
       author_email: session!.user.email ?? null,
     });
-    if (error) return toast.error("Could not save the note.");
+    if (error) { toast.error("Could not save the note."); return; }
     setDrafts((d) => ({ ...d, [docId]: "" }));
     void loadNotes();
   };
@@ -229,9 +229,9 @@ function InviteManager() {
 
   const add = async () => {
     const parsed = emailSchema.safeParse(email);
-    if (!parsed.success) return toast.error(parsed.error.issues[0]!.message);
+    if (!parsed.success) { toast.error(parsed.error.issues[0]!.message); return; }
     const { error } = await supabase.from("invites").insert({ email: parsed.data });
-    if (error) return toast.error("Could not add this email (already invited?).");
+    if (error) { toast.error("Could not add this email (already invited?)."); return; }
     setEmail("");
     toast.success(`${parsed.data} can now sign up and get access.`);
     void load();
