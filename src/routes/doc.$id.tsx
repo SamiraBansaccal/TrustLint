@@ -68,7 +68,7 @@ function TrustCard({ doc, label }: { doc: Doc; label: string }) {
 
 function DocumentDetail() {
   const { id } = useParams({ from: "/doc/$id" });
-  const { analysis, people, docs } = useTrustLint();
+  const { analysis, people, docs, liveDocs } = useTrustLint();
   const doc = docs.find((d) => d.id === id);
 
   if (!doc) {
