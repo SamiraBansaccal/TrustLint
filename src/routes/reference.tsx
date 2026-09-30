@@ -78,7 +78,7 @@ function ReferencePage() {
             against it, not against each other.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button onClick={runLegalWatch} disabled={dataset === "real"} title={dataset === "real" ? "Switch to demo figures to simulate an alert" : undefined}>
             <Siren className="size-4" />
             Simulate Legal Watch alert
@@ -147,8 +147,8 @@ function ReferencePage() {
         <CardHeader>
           <CardTitle className="text-base">Reference entries</CardTitle>
         </CardHeader>
-        <CardContent className="p-0">
-          <table className="w-full text-sm">
+        <CardContent className="overflow-x-auto p-0">
+          <table className="w-full min-w-[560px] text-sm">
             <thead className="border-y border-border bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
               <tr>
                 <th className="px-5 py-2 font-medium">Parameter</th>

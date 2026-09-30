@@ -118,8 +118,8 @@ function DocumentDetail() {
         <StatusPill status={analysis.statusByDoc[doc.id]!} />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="min-w-0 space-y-6 lg:col-span-2">
           <Card>
             <CardHeader>
               <CardTitle className="text-base">
@@ -190,8 +190,8 @@ function DocumentDetail() {
             <CardHeader>
               <CardTitle className="text-base">Extracted claims</CardTitle>
             </CardHeader>
-            <CardContent className="p-0">
-              <table className="w-full text-sm">
+            <CardContent className="overflow-x-auto p-0">
+              <table className="w-full min-w-[560px] text-sm">
                 <thead className="border-y border-border bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
                   <tr>
                     <th className="px-5 py-2 font-medium">Parameter</th>
