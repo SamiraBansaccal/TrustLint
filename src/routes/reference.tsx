@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { z } from "zod";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AlertTriangle, RotateCcw, Siren } from "lucide-react";
 import { toast } from "sonner";
@@ -166,13 +167,9 @@ function ReferencePage() {
                   <td className="px-5 py-2 font-mono text-xs">{entry.topic_param}</td>
                   <td className="px-3 py-2 font-mono text-xs">{entry.scope}</td>
                   <td className="px-3 py-2">
-                    <Input
+                    <DemoValueInput
                       value={entry.value}
-                      maxLength={60}
-                      className="h-8 w-36 font-mono text-xs"
-                      onChange={(e) =>
-                        setReferenceValue(entry.topic_param, entry.scope, e.target.value.slice(0, 60))
-                      }
+                      onCommit={(v) => setReferenceValue(entry.topic_param, entry.scope, v)}
                     />
                   </td>
                   <td className="px-3 py-2 text-xs text-muted-foreground">{entry.source}</td>
@@ -191,5 +188,35 @@ function ReferencePage() {
         badge on the dashboard until you reset.
       </p>
     </div>
+  );
+}
+
+const refValueSchema = z.string().trim().min(1, "Value cannot be empty").max(60, "Max 60 characters");
+
+/** Demo editor: validates with zod, applies on Enter or when leaving the field. */
+function DemoValueInput({ value, onCommit }: { value: string; onCommit: (v: string) => void }) {
+  const [draft, setDraft] = useState(value);
+  useEffect(() => setDraft(value), [value]);
+  const commit = () => {
+    if (draft === value) return;
+    const parsed = refValueSchema.safeParse(draft);
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0]!.message);
+      setDraft(value);
+      return;
+    }
+    onCommit(parsed.data);
+  };
+  return (
+    <Input
+      value={draft}
+      maxLength={60}
+      className="h-8 w-36 font-mono text-xs"
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") commit();
+      }}
+    />
   );
 }

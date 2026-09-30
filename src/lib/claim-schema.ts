@@ -1,10 +1,12 @@
 import { z } from "zod";
 import { ALLOWED_TOPIC_PARAMS, SCOPE_BY_TOPIC_PARAM } from "@/data/vocabulary";
 
-export const extractRequestSchema = z.object({
-  title: z.string().min(1).max(200),
-  content: z.string().min(1).max(5000),
-});
+export const extractRequestSchema = z
+  .object({
+    title: z.string().min(1).max(200),
+    content: z.string().min(1).max(5000),
+  })
+  .strict();
 
 export const extractedClaimSchema = z
   .object({
