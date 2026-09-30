@@ -32,7 +32,7 @@ export const Route = createFileRoute("/doc/$id")({
 });
 
 function TrustCard({ doc, label }: { doc: Doc; label: string }) {
-  const { analysis, liveDocs } = useTrustLint();
+  const { analysis } = useTrustLint();
   const t = analysis.trustByDoc[doc.id]!;
   return (
     <div className="rounded-lg border border-border bg-card p-4">
