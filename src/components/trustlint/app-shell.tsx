@@ -1,5 +1,8 @@
 import { Link } from "@tanstack/react-router";
-import { ScanSearch } from "lucide-react";
+import { LogIn, ScanSearch, ShieldCheck } from "lucide-react";
+import { useTrustLint } from "@/lib/trustlint-context";
+import { useTeam } from "@/lib/team";
+import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
 
 const NAV = [
@@ -10,6 +13,8 @@ const NAV = [
 ] as const;
 
 export function AppShell({ children }: { children: ReactNode }) {
+  const { dataset, setDataset } = useTrustLint();
+  const { session } = useTeam();
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-30 border-b border-border bg-card/90 backdrop-blur">
@@ -32,12 +37,35 @@ export function AppShell({ children }: { children: ReactNode }) {
               </Link>
             ))}
           </nav>
-          <p className="ml-auto hidden text-xs text-muted-foreground lg:block">
-            A linter for organisational knowledge
-          </p>
+          <div className="ml-auto flex items-center gap-3">
+            <div className="flex rounded-md border border-border p-0.5 text-xs" role="group" aria-label="Data set">
+              {(["demo", "real"] as const).map((d) => (
+                <button
+                  key={d}
+                  type="button"
+                  onClick={() => setDataset(d)}
+                  className={cn(
+                    "rounded px-2.5 py-1 font-medium transition-colors",
+                    dataset === d ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {d === "demo" ? "Demo figures" : "Real 2026 figures"}
+                </button>
+              ))}
+            </div>
+            <Link
+              to={session ? "/portal" : "/auth"}
+              className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium hover:bg-secondary"
+            >
+              {session ? <ShieldCheck className="size-3.5" /> : <LogIn className="size-3.5" />}
+              {session ? "Legal portal" : "Legal team sign in"}
+            </Link>
+          </div>
         </div>
         <div className="border-t border-border bg-warn/15 px-6 py-1.5 text-center text-[11px] font-medium text-warn-foreground">
-          Proof of concept – all documents, people and values are fictional.
+          {dataset === "demo"
+            ? "Proof of concept – all documents, people and values are fictional."
+            : "Reference values are real official 2026 figures with sources. Internal documents and people are still fictional examples."}
         </div>
       </header>
       <main className="mx-auto max-w-7xl px-6 py-8">{children}</main>
