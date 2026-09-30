@@ -10,11 +10,18 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ReferenceRouteImport } from './routes/reference'
 import { Route as ApiExtractClaimsRouteImport } from './routes/api/extract-claims'
+import { Route as DocIdRouteImport } from './routes/doc.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReferenceRoute = ReferenceRouteImport.update({
+  id: '/reference',
+  path: '/reference',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiExtractClaimsRoute = ApiExtractClaimsRouteImport.update({
@@ -22,31 +29,44 @@ const ApiExtractClaimsRoute = ApiExtractClaimsRouteImport.update({
   path: '/api/extract-claims',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DocIdRoute = DocIdRouteImport.update({
+  id: '/doc/$id',
+  path: '/doc/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/reference': typeof ReferenceRoute
   '/api/extract-claims': typeof ApiExtractClaimsRoute
+  '/doc/$id': typeof DocIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/reference': typeof ReferenceRoute
   '/api/extract-claims': typeof ApiExtractClaimsRoute
+  '/doc/$id': typeof DocIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/reference': typeof ReferenceRoute
   '/api/extract-claims': typeof ApiExtractClaimsRoute
+  '/doc/$id': typeof DocIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/api/extract-claims'
+  fullPaths: '/' | '/reference' | '/api/extract-claims' | '/doc/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api/extract-claims'
-  id: '__root__' | '/' | '/api/extract-claims'
+  to: '/' | '/reference' | '/api/extract-claims' | '/doc/$id'
+  id: '__root__' | '/' | '/reference' | '/api/extract-claims' | '/doc/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ReferenceRoute: typeof ReferenceRoute
   ApiExtractClaimsRoute: typeof ApiExtractClaimsRoute
+  DocIdRoute: typeof DocIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -58,6 +78,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/reference': {
+      id: '/reference'
+      path: '/reference'
+      fullPath: '/reference'
+      preLoaderRoute: typeof ReferenceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/extract-claims': {
       id: '/api/extract-claims'
       path: '/api/extract-claims'
@@ -65,12 +92,21 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiExtractClaimsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/doc/$id': {
+      id: '/doc/$id'
+      path: '/doc/$id'
+      fullPath: '/doc/$id'
+      preLoaderRoute: typeof DocIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ReferenceRoute: ReferenceRoute,
   ApiExtractClaimsRoute: ApiExtractClaimsRoute,
+  DocIdRoute: DocIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
