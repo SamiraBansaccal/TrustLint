@@ -14,16 +14,141 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      invites: {
+        Row: {
+          created_at: string
+          email: string
+          invited_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          invited_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          invited_by?: string | null
+        }
+        Relationships: []
+      }
+      reference_values: {
+        Row: {
+          effective_date: string
+          scope: string
+          source: string
+          source_url: string | null
+          topic_param: string
+          updated_at: string
+          updated_by_email: string | null
+          value: string
+        }
+        Insert: {
+          effective_date: string
+          scope: string
+          source: string
+          source_url?: string | null
+          topic_param: string
+          updated_at?: string
+          updated_by_email?: string | null
+          value: string
+        }
+        Update: {
+          effective_date?: string
+          scope?: string
+          source?: string
+          source_url?: string | null
+          topic_param?: string
+          updated_at?: string
+          updated_by_email?: string | null
+          value?: string
+        }
+        Relationships: []
+      }
+      resolution_notes: {
+        Row: {
+          author_email: string | null
+          author_id: string
+          body: string
+          created_at: string
+          doc_id: string
+          id: string
+        }
+        Insert: {
+          author_email?: string | null
+          author_id?: string
+          body: string
+          created_at?: string
+          doc_id: string
+          id?: string
+        }
+        Update: {
+          author_email?: string | null
+          author_id?: string
+          body?: string
+          created_at?: string
+          doc_id?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      resolutions: {
+        Row: {
+          doc_id: string
+          status: Database["public"]["Enums"]["resolution_status"]
+          updated_at: string
+          updated_by_email: string | null
+        }
+        Insert: {
+          doc_id: string
+          status?: Database["public"]["Enums"]["resolution_status"]
+          updated_at?: string
+          updated_by_email?: string | null
+        }
+        Update: {
+          doc_id?: string
+          status?: Database["public"]["Enums"]["resolution_status"]
+          updated_at?: string
+          updated_by_email?: string | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      claim_access: { Args: never; Returns: string }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_team: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "legal"
+      resolution_status: "open" | "in_progress" | "fixed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +275,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "legal"],
+      resolution_status: ["open", "in_progress", "fixed"],
+    },
   },
 } as const
