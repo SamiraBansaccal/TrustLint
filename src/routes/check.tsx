@@ -170,7 +170,9 @@ function CheckPage() {
               <div className="space-y-1.5">
                 <Label>Type</Label>
                 <Select value={type} onValueChange={(v) => setType(v as DocType)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue>{type}</SelectValue>
+                  </SelectTrigger>
                   <SelectContent>
                     {["procedure", "policy", "checklist", "faq", "wiki", "chat"].map((t) => (
                       <SelectItem key={t} value={t}>
@@ -183,7 +185,9 @@ function CheckPage() {
               <div className="space-y-1.5">
                 <Label>Owner</Label>
                 <Select value={ownerId} onValueChange={setOwnerId}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue>{PEOPLE.find((p) => p.id === ownerId)?.name}</SelectValue>
+                  </SelectTrigger>
                   <SelectContent>
                     {PEOPLE.map((p) => (
                       <SelectItem key={p.id} value={p.id}>
@@ -196,7 +200,9 @@ function CheckPage() {
               <div className="space-y-1.5">
                 <Label>Country</Label>
                 <Select value={country || "unknown"} onValueChange={(v) => setCountry(v === "unknown" ? "" : (v as Country))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue>{country || "unknown"}</SelectValue>
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="BE">BE</SelectItem>
                     <SelectItem value="NL">NL</SelectItem>
