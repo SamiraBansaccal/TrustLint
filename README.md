@@ -47,6 +47,7 @@ Built during the Tectonic Hackathon (30 September 2026). **All documents and peo
 - No `dangerouslySetInnerHTML`, `innerHTML` or `eval`. External links use `rel="noopener noreferrer"`. Every form is validated with zod.
 - **Core demo:** no authentication by design – single-user proof of concept; reference edits and published documents only change the current browser session.
 - **Legal portal extension:** sign-in (email/password or Google), invite-only access, row-level security on every table (anyone may read statuses and real reference values; only invited team members may change them; notes and invites are team/admin only). Security hardening: no automatic admin (the admin role is granted manually), invitations only apply to confirmed e-mail addresses, "changed by" and note authors are filled in by the database from the signed-in account, and signed-out visitors cannot read team e-mails.
+- **Team e-mails** ("changed by") are only readable by invited team members, through a server-side check (`team_resolution_audit` / `team_reference_audit`).
 - **Known limitation – AI endpoint:** extract-claims is intentionally callable without sign-in so the jury can test it; its 20 requests/minute limit is kept in memory per server instance, so with several instances the real limit is higher. Production would use a shared rate limiter or require sign-in. Production would additionally need SSO, finer role-based access and an audit log.
 
 ## How to run locally

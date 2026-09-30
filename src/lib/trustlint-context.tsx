@@ -1,4 +1,5 @@
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { toast } from "sonner";
 import { DOCUMENTS } from "@/data/documents";
 import { SEED_CLAIMS } from "@/data/claims";
 import { REFERENCE } from "@/data/reference";
@@ -34,8 +35,16 @@ export function TrustLintProvider({ children }: { children: ReactNode }) {
   const [reference, setReference] = useState<ReferenceEntry[]>(REFERENCE);
   const [newBadges, setNewBadges] = useState<string[]>([]);
   const [dataset, setDataset] = useState<Dataset>("demo");
-  const { realReference } = useTeam();
-  const activeReference: ReferenceEntry[] = dataset === "real" ? realReference : reference;
+  const { realReference, realLoaded } = useTeam();
+  const realUsable = realReference.length > 0;
+  const activeReference: ReferenceEntry[] = dataset === "real" && realUsable ? realReference : reference;
+
+  useEffect(() => {
+    if (dataset === "real" && realLoaded && !realUsable) {
+      setDataset("demo");
+      toast.error("Real figures unavailable – showing demo figures.");
+    }
+  }, [dataset, realLoaded, realUsable]);
 
   const analysis = useMemo(
     () => analyze({ docs, claims, reference: activeReference, people: PEOPLE }),

@@ -69,24 +69,36 @@ export function TeamProvider({ children }: { children: ReactNode }) {
   }, [session?.user.id, refreshRole]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadResolutions = useCallback(async () => {
-    const { data: auth } = await supabase.auth.getSession();
-    const cols = auth.session ? "doc_id, status, updated_at, updated_by_email" : "doc_id, status, updated_at";
-    const { data } = await supabase.from("resolutions").select(cols);
+    const { data } = await supabase.from("resolutions").select("doc_id, status, updated_at");
+    const emails: Record<string, string | null> = {};
+    if (role === "admin" || role === "legal") {
+      const { data: audit } = await supabase.rpc("team_resolution_audit");
+      for (const a of (audit ?? []) as Array<{ doc_id: string; updated_by_email: string | null }>) emails[a.doc_id] = a.updated_by_email;
+    }
     const map: Record<string, Resolution> = {};
-    for (const r of (data ?? []) as unknown as Resolution[]) map[r.doc_id] = { ...r, updated_by_email: r.updated_by_email ?? null };
+    for (const r of (data ?? []) as Array<Omit<Resolution, "updated_by_email">>) map[r.doc_id] = { ...r, updated_by_email: emails[r.doc_id] ?? null };
     setResolutions(map);
-  }, []);
+  }, [role]);
 
   const loadReference = useCallback(async () => {
-    const { data: auth } = await supabase.auth.getSession();
-    const base = "topic_param, scope, value, source, source_url, effective_date";
-    const { data: raw } = await supabase
+    const { data: raw, error } = await supabase
       .from("reference_values")
-      .select(auth.session ? `${base}, updated_by_email` : base)
+      .select("topic_param, scope, value, source, source_url, effective_date")
       .order("topic_param");
+    if (error) {
+      setRealReference([]);
+      setRealLoaded(true);
+      return;
+    }
+    const emails: Record<string, string | null> = {};
+    if (role === "admin" || role === "legal") {
+      const { data: audit } = await supabase.rpc("team_reference_audit");
+      for (const a of (audit ?? []) as Array<{ topic_param: string; scope: string; updated_by_email: string | null }>)
+        emails[`${a.topic_param}|${a.scope}`] = a.updated_by_email;
+    }
     const data = (raw ?? []) as unknown as Array<{
       topic_param: string; scope: string; value: string; source: string;
-      source_url: string | null; effective_date: string; updated_by_email?: string | null;
+      source_url: string | null; effective_date: string;
     }>;
     setRealReference(
       (data ?? []).map((r) => ({
@@ -96,11 +108,11 @@ export function TeamProvider({ children }: { children: ReactNode }) {
         source: r.source,
         source_url: r.source_url,
         effective_date: r.effective_date,
-        updated_by_email: r.updated_by_email ?? null,
+        updated_by_email: emails[`${r.topic_param}|${r.scope}`] ?? null,
       })),
     );
     setRealLoaded(true);
-  }, []);
+  }, [role]);
 
   useEffect(() => {
     void loadResolutions();
@@ -114,7 +126,13 @@ export function TeamProvider({ children }: { children: ReactNode }) {
         void loadReference();
       })
       .subscribe();
+    const onFocus = () => {
+      void loadResolutions();
+      void loadReference();
+    };
+    window.addEventListener("focus", onFocus);
     return () => {
+      window.removeEventListener("focus", onFocus);
       void supabase.removeChannel(channel);
     };
   }, [loadResolutions, loadReference, session?.user.id]);
