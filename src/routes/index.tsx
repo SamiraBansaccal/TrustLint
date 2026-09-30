@@ -130,7 +130,11 @@ function Dashboard() {
           <CardTitle className="text-base">Flagged documents, by priority</CardTitle>
           <div className="flex flex-wrap gap-2">
             <Select value={status} onValueChange={setStatus}>
-              <SelectTrigger className="w-36"><SelectValue placeholder="Status" /></SelectTrigger>
+              <SelectTrigger className="w-36">
+                <SelectValue placeholder="Status">
+                  {status === "all" ? "All statuses" : status === "red" ? "Red" : "Amber"}
+                </SelectValue>
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All statuses</SelectItem>
                 <SelectItem value="red">Red</SelectItem>
@@ -138,7 +142,11 @@ function Dashboard() {
               </SelectContent>
             </Select>
             <Select value={country} onValueChange={setCountry}>
-              <SelectTrigger className="w-36"><SelectValue placeholder="Country" /></SelectTrigger>
+              <SelectTrigger className="w-36">
+                <SelectValue placeholder="Country">
+                  {country === "all" ? "All countries" : country === "unknown" ? "Unknown" : country}
+                </SelectValue>
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All countries</SelectItem>
                 <SelectItem value="BE">BE</SelectItem>
@@ -147,7 +155,11 @@ function Dashboard() {
               </SelectContent>
             </Select>
             <Select value={kind} onValueChange={setKind}>
-              <SelectTrigger className="w-48"><SelectValue placeholder="Issue" /></SelectTrigger>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Issue">
+                  {kind === "all" ? "All issue kinds" : RULES[kind as IssueKind].name}
+                </SelectValue>
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All issue kinds</SelectItem>
                 {ISSUE_KINDS.map((k) => (
