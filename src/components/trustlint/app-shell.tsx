@@ -48,7 +48,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 </Link>
               ))}
             </nav>
-            <div className="flex flex-wrap items-center justify-end gap-2">
+            <div className="flex flex-wrap items-center justify-end gap-2 xl:flex-nowrap">
               <button
                 type="button"
                 onClick={() => {

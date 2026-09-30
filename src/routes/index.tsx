@@ -325,7 +325,7 @@ function Dashboard() {
                       <td className="px-5 py-3.5">
                         <div className="flex items-start gap-3">
                           <div>
-                            <StatusDot status={analysis.statusByDoc[doc.id]!} className="mb-1" />
+                            <StatusDot status={analysis.statusByDoc[doc.id]!} className="mb-1 flex w-fit" />
                             <Link
                               to="/doc/$id"
                               params={{ id: doc.id }}
