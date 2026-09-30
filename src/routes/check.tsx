@@ -60,7 +60,30 @@ const EXAMPLE = {
     "Welcome to the team! Remember that the Dimona can be sent up to 24 hours after the employee's first day. Meal vouchers: the employer pays at most €7.00 per voucher. Client payroll inputs are due by the 5th working day of the month.",
 };
 
+/** Pre-verified claims for the example text, used only when the live AI call fails. */
+const EXAMPLE_SEED_CLAIMS = [
+  {
+    topic_param: "dimona.deadline",
+    scope: "BE",
+    value: "within_24h_after_start",
+    quote: "Remember that the Dimona can be sent up to 24 hours after the employee's first day.",
+  },
+  {
+    topic_param: "meal_voucher.employer_max",
+    scope: "BE",
+    value: "€7.00",
+    quote: "Meal vouchers: the employer pays at most €7.00 per voucher.",
+  },
+  {
+    topic_param: "payroll_input.deadline",
+    scope: "BE",
+    value: "5th working day",
+    quote: "Client payroll inputs are due by the 5th working day of the month.",
+  },
+];
+
 interface Result {
+  source: "live" | "fallback";
   doc: Doc;
   claims: Claim[];
   issues: Issue[];
@@ -97,7 +120,20 @@ function CheckPage() {
     }
     setBusy(true);
     try {
-      const extraction = await extractClaims({ title: parsed.data.title, content: parsed.data.content });
+      let extraction: { claims: typeof EXAMPLE_SEED_CLAIMS; dropped: number };
+      let source: "live" | "fallback" = "live";
+      try {
+        extraction = await extractClaims({ title: parsed.data.title, content: parsed.data.content });
+      } catch {
+        source = "fallback";
+        const isExample = parsed.data.content === EXAMPLE.content;
+        extraction = { claims: isExample ? EXAMPLE_SEED_CLAIMS : [], dropped: 0 };
+        toast.error(
+          isExample
+            ? "AI extraction failed or timed out. Showing the pre-verified seed claims for the example."
+            : "AI extraction failed or timed out. No seed claims exist for this text, so no claims were checked.",
+        );
+      }
       const candidateId = `D${docs.length + 1}`;
       const candidate: Doc = {
         id: candidateId,
@@ -117,6 +153,7 @@ function CheckPage() {
         people: PEOPLE,
       });
       setResult({
+        source,
         doc: candidate,
         claims: candidateClaims,
         issues: analysis.issuesByDoc[candidateId]!,
@@ -124,7 +161,7 @@ function CheckPage() {
         dropped: extraction.dropped,
       });
     } catch {
-      toast.error("Extraction failed. The document was not checked.");
+      toast.error("The check could not be completed.");
     } finally {
       setBusy(false);
     }
@@ -247,7 +284,18 @@ function CheckPage() {
             ) : (
               <>
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <StatusPill status={result.status} />
+                  <div className="flex items-center gap-2">
+                    <StatusPill status={result.status} />
+                    <span
+                      className={
+                        result.source === "live"
+                          ? "rounded-full border border-primary/40 bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary"
+                          : "rounded-full border border-border bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground"
+                      }
+                    >
+                      {result.source === "live" ? "Live AI extraction" : "Fallback: seed claims"}
+                    </span>
+                  </div>
                   <span className="text-xs text-muted-foreground">
                     {result.claims.length} claim{result.claims.length === 1 ? "" : "s"} extracted ·{" "}
                     {result.dropped} discarded (quote not found)

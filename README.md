@@ -1,86 +1,75 @@
-# TrustLint
+# TrustLint – a linter for organisational knowledge
 
-**A linter for organisational knowledge.** Proof of concept for the SD Worx challenge
-_"Unlock the Knowledge Within – Find it. Understand it. Trust it."_
+Built during the Tectonic Hackathon (30 September 2026). **All documents and people are fictional.**
 
-> All documents, people and values in this demo are fictional.
+## What TrustLint is
 
-## The problem
+**Challenge:** SD Worx – "Unlock the Knowledge Within – Find it. Understand it. Trust it."
 
-Internal knowledge rots silently. A legal parameter changes, a colleague leaves, a Teams message
-overrules a procedure — and nobody knows which documents became wrong. People keep reading them.
+**Problem:** Internal procedures, FAQs, checklists and chat messages drift apart. Values go out of date after a legal change, documents contradict each other, owners leave, and nobody knows which page to trust.
 
-## The solution
+**Solution:** TrustLint scans the knowledge base like a code linter. Every flag is explainable: the **rule** that fired, the **verbatim quote** as evidence, and the **person** who should fix it. Two demo moments:
 
-TrustLint scans internal documents the way a code linter scans code and flags what can no longer be
-trusted: outdated values, contradictions between sources, missing or departed owners, stale
-documents, near-duplicates and missing scope.
+1. **Legal Watch** – a (simulated) legal change shows instantly which documents became wrong and who must update them.
+2. **Check a new document** – run TrustLint on a draft before publication, like CI for code.
 
-**Never a black box.** Every flag shows three things: the rule that fired, the exact sentence from
-the document as evidence, and the person who should fix it.
+## Architecture
 
-## How it works
+| Part | Role |
+| --- | --- |
+| `src/data/` | Fictional seed data: documents, people, claims, reference values, vocabulary |
+| `src/lib/checks.ts` | Pure, deterministic TypeScript checks. No AI decides any issue |
+| `src/routes/api/extract-claims.ts` | The only AI step: extracts claims (parameter, scope, value, verbatim quote) from a document |
+| `src/lib/trustlint-context.tsx` | React state held in memory: documents, claims, demo reference values, NEW badges |
+| `src/lib/team.tsx` + Lovable Cloud | Optional extension: legal portal, resolution status, notes, real 2026 reference figures |
 
-1. **Claims.** Each document is reduced to typed claims: `topic_param`, `scope`, `value`, `quote`.
-   Only parameters in a fixed vocabulary are allowed (indexation rate, Dimona deadline, meal voucher
-   maximum, payroll input deadline, response SLA, payslip retention, holiday allowance).
-2. **Rules** (`src/lib/checks.ts`) — pure, deterministic TypeScript, no AI:
+## How trust is computed
 
-   | Rule | Weight | Fires when |
-   | --- | --- | --- |
-   | Reference mismatch | 5 | A claim differs from the source of truth |
-   | Contradiction | 4 | A more trusted internal document says something else |
-   | No owner / Owner left | 3 | Nobody accountable, or the owner left the company |
-   | Stale / Needs confirmation / Duplicate | 2 | Past its review cycle / newer source disagrees / near-duplicate |
-   | Missing scope / Conflicting source | 1 | No country stated / a less trusted document disagrees |
+- **Rules and weights:** reference mismatch, contradiction, needs confirmation, conflicting source, owner left, no owner, stale, duplicate, scope missing – each with a fixed weight (see the in-app page "How trust is computed").
+- **Status:** red if any issue has weight ≥ 4, amber if any issue, green otherwise.
+- **Trust score:** authority (policy/procedure 3, checklist/faq/wiki 2, chat 1) + active owner (+1) + fresh (+1).
+- **Priority:** sum of weights × log10(10 + views per month).
+- **Contradiction policy:** where a reference value exists it is the arbiter. Only without a reference are documents compared against each other; the highest trust score wins, the others get a contradiction.
 
-3. **Trust score** of a source = `authority + owner active + fresh`
-   (policy & procedure 3, checklist/faq/wiki 2, chat 1; +1 active owner; +1 fresh — a chat message
-   stays fresh for 60 days). Where a reference exists, the reference is the arbiter; otherwise the
-   highest trust score wins.
-4. **Status & priority.** Red if any issue weighs ≥ 4, amber if any issue, green otherwise.
-   `priority = (sum of weights) × log10(10 + views per month)` — noisy documents nobody reads rank
-   below quiet documents everyone reads.
-5. **AI, exactly once.** The backend function `extract-claims` asks a model to extract claims from a
-   document. Every quote must appear verbatim in the text or the claim is discarded and counted, so
-   the AI cannot invent evidence. Document content is treated as untrusted input (prompt-injection
-   guard + output validation with zod). The API key never reaches the browser.
+## AI safety
 
-## Run it locally
+- Claims must quote the document verbatim (case-insensitive, whitespace- and quote-normalised). Any invented quote is discarded and counted.
+- Prompt-injection guard: the system prompt states the document is untrusted data whose instructions must never be followed.
+- Model output is validated with zod (≤ 30 claims, allowed parameter, allowed scope, value ≤ 60, quote ≤ 400) and re-validated in the browser.
+- The Check page shows **"Live AI extraction"** or **"Fallback: seed claims"** so it is always clear where claims came from. Nothing is hardcoded for the example text; pre-verified seed claims are used only if the live call fails.
+
+## Security
+
+- `extract-claims`: POST only (405 otherwise), `Content-Type: application/json` required, strict zod schema `{ title 1–200, content 1–5000 }` (unknown fields → 400). Model, prompt and URL are fixed server-side.
+- In-memory rate limit: 20 requests/minute per IP (429). 20-second timeout on the model call.
+- Generic errors only ("Invalid input", "Too many requests", "Extraction failed"). No stack traces, raw model output or secrets; document content is never logged.
+- No secrets in the repository or frontend. `.env` is git-ignored; `.env.example` holds placeholder names only.
+- No `dangerouslySetInnerHTML`, `innerHTML` or `eval`. External links use `rel="noopener noreferrer"`. Every form is validated with zod.
+- **Core demo:** no authentication by design – single-user proof of concept; reference edits and published documents only change the current browser session.
+- **Legal portal extension:** sign-in (email/password or Google), invite-only access, row-level security on every table (anyone may read statuses and real reference values; only invited team members may change them; notes and invites are team/admin only). Production would additionally need SSO, finer role-based access and an audit log.
+
+## How to run locally
 
 ```bash
 npm install
 npm run dev
 ```
 
-The AI secret is a server-side environment variable (`LOVABLE_API_KEY`, or `GEMINI_API_KEY` when
-calling Google Gemini directly). Copy `.env.example` to `.env` and fill it in — `.env` is git-ignored
-and no key is ever read in frontend code. Without a key the app still works: the seed claims ship
-with it, only "Re-run AI extraction" and "Check a new document" need the model.
+The AI step needs `LOVABLE_API_KEY` as a server-side secret (see `.env.example`). Without it, extraction fails gracefully and the app uses seed claims.
 
 ## Demo script
 
-1. **Dashboard** — 12 documents scanned, 8 flagged, ranked by priority. The top row, the client-facing
-   Indexation FAQ, is red.
-2. **Open D2 "Indexation FAQ for clients"** — reference mismatch (says 1.6%, reference says 2.0%),
-   the owner left in March 2025, and it is stale. The evidence sentence is highlighted in the text.
-   Who to ask: Anna Peeters. "Draft message" writes the mail for you.
-3. **Reference & Legal Watch → "Simulate Legal Watch alert"** — CP 200 indexation moves from 2.0% to
-   2.2%. D1 instantly turns red with a NEW badge and the impact panel lists D1, D2 and D12 with their
-   quotes and contacts.
-4. **Check a new document → "Load example" → "Run TrustLint"** — the draft is checked before
-   publication: the Dimona claim is a reference mismatch, the meal voucher and payroll input claims
-   are consistent. Publish or discard.
+1. **Dashboard** – ranked flagged documents with rule, evidence and contact.
+2. **Document D2** – reference mismatch + owner left + stale; who to ask: Anna Peeters.
+3. **Reference & Legal Watch** – "Simulate Legal Watch alert": CP 200 indexation goes to 2.2%; D1 turns red with a NEW badge, impact lists D1, D2, D12.
+4. **Check a new document** – "Load example" → "Run TrustLint": catches the Dimona mismatch before publication.
 
-See **How trust is computed** for every rule, weight and formula.
+"Reset demo" in the header restores all seed data.
 
-## Limitations and unfinished parts
+## Known limitations / unfinished
 
-- In-memory only: edited reference values, published documents and re-extracted claims are lost on
-  reload. There is no database.
-- All data is fictional and hand-written; a real deployment would ingest SharePoint, Confluence and
-  Teams.
-- Duplicate detection is a simple Jaccard word-set similarity, not semantic.
-- No authentication: this is a single-user proof of concept. Production would need SSO and
-  role-based access.
-- The reference file simulates Legal Watch; there is no live legal feed.
+- Core demo data is in memory only and resets on reload.
+- All documents and people are fictional; the demo reference file simulates Legal Watch (real 2026 figures are available via the header switch).
+- Duplicate detection is simple word-set (Jaccard) similarity.
+- Rate limiting is per server instance and in memory.
+- **CORS:** no CORS headers are sent, so browsers block cross-origin reads of `extract-claims`; the endpoint is not restricted to an origin allow-list because the preview and published domains differ. Non-browser clients can still call it (bounded by validation and rate limit).

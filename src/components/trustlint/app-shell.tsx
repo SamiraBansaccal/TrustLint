@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
-import { LogIn, ScanSearch, ShieldCheck } from "lucide-react";
+import { LogIn, RotateCcw, ScanSearch, ShieldCheck } from "lucide-react";
+import { toast } from "sonner";
 import { useTrustLint } from "@/lib/trustlint-context";
 import { useTeam } from "@/lib/team";
 import { cn } from "@/lib/utils";
@@ -13,7 +14,7 @@ const NAV = [
 ] as const;
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { dataset, setDataset } = useTrustLint();
+  const { dataset, setDataset, resetSeed } = useTrustLint();
   const { session } = useTeam();
   return (
     <div className="min-h-screen bg-background">
@@ -53,6 +54,17 @@ export function AppShell({ children }: { children: ReactNode }) {
                 </button>
               ))}
             </div>
+            <button
+              type="button"
+              onClick={() => {
+                resetSeed();
+                toast.success("Demo reset: seed documents, claims and reference values restored.");
+              }}
+              className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium hover:bg-secondary"
+            >
+              <RotateCcw className="size-3.5" />
+              Reset demo
+            </button>
             <Link
               to={session ? "/portal" : "/auth"}
               className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium hover:bg-secondary"

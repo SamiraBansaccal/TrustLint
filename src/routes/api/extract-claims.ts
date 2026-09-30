@@ -11,6 +11,7 @@ const SYSTEM_PROMPT = `You extract factual claims from internal payroll and HR k
 ${VOCABULARY_PROMPT_LIST}`;
 
 /* --- Simple in-memory rate limit: 20 requests / minute / IP --------- */
+const MODEL_TIMEOUT_MS = 20_000;
 const WINDOW_MS = 60_000;
 const MAX_REQUESTS = 20;
 const hits = new Map<string, number[]>();
@@ -85,6 +86,11 @@ async function handlePost({ request }: { request: Request }): Promise<Response> 
     return json({ error: "Too many requests" }, 429);
   }
 
+  const contentType = request.headers.get("content-type") ?? "";
+  if (!contentType.toLowerCase().startsWith("application/json")) {
+    return json({ error: "Invalid input" }, 400);
+  }
+
   let parsed: z.infer<typeof extractRequestSchema>;
   try {
     parsed = extractRequestSchema.parse(await request.json());
@@ -96,8 +102,10 @@ async function handlePost({ request }: { request: Request }): Promise<Response> 
     const apiKey = process.env["LOVABLE_API_KEY"];
     if (!apiKey) return json({ error: "Extraction failed" }, 502);
 
+    // Hard 20-second limit on the whole model call (request + streamed body).
     const upstream = await fetch("https://ai.gateway.lovable.dev/v1/responses", {
       method: "POST",
+      signal: AbortSignal.timeout(MODEL_TIMEOUT_MS),
       headers: {
         "Content-Type": "application/json",
         "Lovable-API-Key": apiKey,
@@ -156,10 +164,21 @@ async function handlePost({ request }: { request: Request }): Promise<Response> 
   }
 }
 
+function methodNotAllowed(): Response {
+  return new Response(JSON.stringify({ error: "Method not allowed" }), {
+    status: 405,
+    headers: { "Content-Type": "application/json", Allow: "POST" },
+  });
+}
+
 export const Route = createFileRoute("/api/extract-claims")({
   server: {
     handlers: {
       POST: handlePost,
+      GET: methodNotAllowed,
+      PUT: methodNotAllowed,
+      PATCH: methodNotAllowed,
+      DELETE: methodNotAllowed,
     },
   },
 });
