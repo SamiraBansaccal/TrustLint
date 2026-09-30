@@ -14,7 +14,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { StatusDot } from "@/components/trustlint/status";
+import { StatusDot, StatusLegend } from "@/components/trustlint/status";
+import { ISSUE_LABEL } from "@/components/trustlint/issue-badge";
 import { IssueBadge } from "@/components/trustlint/issue-badge";
 import { useTrustLint } from "@/lib/trustlint-context";
 import { RESOLUTION_LABEL, resolutionOf, useTeam, type ResolutionStatus } from "@/lib/team";
@@ -72,7 +73,7 @@ function Kpi({
 }
 
 function Dashboard() {
-  const { docs, analysis, newBadges, people, replaceClaimsForDoc } = useTrustLint();
+  const { docs, analysis, newBadges, people, replaceClaimsForDoc, aiRun, recordAiRun } = useTrustLint();
   const [status, setStatus] = useState("all");
   const [country, setCountry] = useState("all");
   const [kind, setKind] = useState("all");
@@ -95,6 +96,7 @@ function Dashboard() {
   );
 
   const critical = analysis.flagged.filter((d) => analysis.statusByDoc[d.id] === "red").length;
+  const checkCount = analysis.flagged.filter((d) => analysis.statusByDoc[d.id] === "amber").length;
   const fixedCount = analysis.flagged.filter((d) => resolutionOf(resolutions, d.id) === "fixed").length;
   const contacts = new Set(analysis.flagged.map((d) => analysis.whoToAskByDoc[d.id]!.person.id));
 
@@ -103,11 +105,15 @@ function Dashboard() {
     setProgress(0);
     let failures = 0;
     let discarded = 0;
+    let facts = 0;
+    const live: string[] = [];
     for (let i = 0; i < docs.length; i++) {
       const doc = docs[i]!;
       try {
         const result = await extractClaims({ title: doc.title, content: doc.content });
         discarded += result.dropped;
+        facts += result.claims.length;
+        live.push(doc.id);
         const mapped: Claim[] = result.claims.map((c) => ({ ...c, doc_id: doc.id }));
         replaceClaimsForDoc(doc.id, mapped);
       } catch {
@@ -116,6 +122,7 @@ function Dashboard() {
       setProgress(Math.round(((i + 1) / docs.length) * 100));
     }
     setRunning(false);
+    recordAiRun({ at: new Date(), docs: live.length, facts, discarded }, live);
     toast.success(
       `${docs.length} documents processed, ${failures} failure${failures === 1 ? "" : "s"}, ${discarded} claim${discarded === 1 ? "" : "s"} discarded because the quote was not found`,
     );
@@ -126,13 +133,13 @@ function Dashboard() {
       <Select value={status} onValueChange={setStatus}>
         <SelectTrigger className="w-full lg:w-36">
           <SelectValue placeholder="Status">
-            {status === "all" ? "All statuses" : status === "red" ? "Red" : "Amber"}
+            {status === "all" ? "All statuses" : status === "red" ? "Do not use" : "Check before use"}
           </SelectValue>
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">All statuses</SelectItem>
-          <SelectItem value="red">Red</SelectItem>
-          <SelectItem value="amber">Amber</SelectItem>
+          <SelectItem value="red">Do not use</SelectItem>
+          <SelectItem value="amber">Check before use</SelectItem>
         </SelectContent>
       </Select>
       <Select value={country} onValueChange={setCountry}>
@@ -164,14 +171,14 @@ function Dashboard() {
       <Select value={kind} onValueChange={setKind}>
         <SelectTrigger className="w-full lg:w-48">
           <SelectValue placeholder="Issue">
-            {kind === "all" ? "All issue kinds" : RULES[kind as IssueKind].name}
+            {kind === "all" ? "All issue kinds" : ISSUE_LABEL[kind as IssueKind]}
           </SelectValue>
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">All issue kinds</SelectItem>
           {ISSUE_KINDS.map((k) => (
             <SelectItem key={k} value={k}>
-              {RULES[k].name}
+              {ISSUE_LABEL[k]}
             </SelectItem>
           ))}
         </SelectContent>
@@ -188,19 +195,32 @@ function Dashboard() {
             Every flag shows its rule, the exact sentence as evidence and who should fix it.
           </p>
         </div>
-        <div className="flex flex-col gap-2 sm:items-end">
+        <div className="flex flex-col gap-2 sm:max-w-sm sm:items-end sm:text-right">
           <Button onClick={rerun} disabled={running} variant="outline" className="w-full sm:w-auto">
             {running ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
-            Re-run AI extraction
+            Re-read all documents with AI
           </Button>
           {running ? <Progress value={progress} className="h-1.5 w-full sm:w-64" /> : null}
+          <p className="text-[11px] leading-snug text-muted-foreground">
+            An AI model reads each document and extracts its key facts (parameter, value, exact
+            sentence). Facts whose sentence is not found word for word are discarded. The trust rules
+            then run on these facts.
+          </p>
+          <p className="text-[11px] font-medium text-foreground">
+            {aiRun
+              ? `Last AI read: ${aiRun.at.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} – ${aiRun.docs} documents, ${aiRun.facts} facts found, ${aiRun.discarded} discarded.`
+              : "Using pre-verified facts (no AI read yet in this session)."}
+          </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5">
+      <StatusLegend />
+
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-6">
         <Kpi label="Documents scanned" value={docs.length} />
         <Kpi label="Flagged" value={analysis.flagged.length} hint="at least one issue" />
-        <Kpi label="Critical" value={critical} hint="red – do not trust" tone="bad" />
+        <Kpi label="Do not use" value={critical} hint="states something wrong" tone="bad" />
+        <Kpi label="Check before use" value={checkCount} hint="trust signal missing" />
         <Kpi label="People to notify" value={contacts.size} hint="distinct contacts" />
         <Kpi label="Resolved" value={`${fixedCount}/${analysis.flagged.length}`} hint="marked fixed" tone="ok" />
       </div>
@@ -237,7 +257,7 @@ function Dashboard() {
                           (st === "red" ? "bg-bad/10 text-bad" : "bg-warn/15 text-warn-foreground")
                         }
                       >
-                        {st === "red" ? "Critical" : "Check"}
+                        {st === "red" ? "Do not use" : "Check before use"}
                       </span>
                       {newBadges.includes(doc.id) ? (
                         <Badge className="bg-bad text-bad-foreground text-[10px]">NEW</Badge>
@@ -304,8 +324,8 @@ function Dashboard() {
                     <tr key={doc.id} className="border-b border-border last:border-0 hover:bg-accent/40">
                       <td className="px-5 py-3.5">
                         <div className="flex items-start gap-3">
-                          <StatusDot status={analysis.statusByDoc[doc.id]!} className="mt-1.5" />
                           <div>
+                            <StatusDot status={analysis.statusByDoc[doc.id]!} className="mb-1 flex w-fit" />
                             <Link
                               to="/doc/$id"
                               params={{ id: doc.id }}

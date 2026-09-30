@@ -68,7 +68,7 @@ function TrustCard({ doc, label }: { doc: Doc; label: string }) {
 
 function DocumentDetail() {
   const { id } = useParams({ from: "/doc/$id" });
-  const { analysis, people, docs } = useTrustLint();
+  const { analysis, people, docs, liveDocs } = useTrustLint();
   const doc = docs.find((d) => d.id === id);
 
   if (!doc) {
@@ -189,6 +189,12 @@ function DocumentDetail() {
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Extracted claims</CardTitle>
+              <p className="text-xs text-muted-foreground">
+                Source:{" "}
+                <span className="font-semibold text-foreground">
+                  {liveDocs.includes(doc.id) ? "Extracted live by AI" : "Pre-verified facts"}
+                </span>
+              </p>
             </CardHeader>
             <CardContent className="overflow-x-auto p-0">
               <table className="w-full min-w-[560px] text-sm">

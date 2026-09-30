@@ -150,7 +150,7 @@ function Portal() {
               <CardContent className="space-y-3 p-5">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="flex items-start gap-3">
-                    <StatusDot status={analysis.statusByDoc[doc.id]!} className="mt-1.5" />
+                    <StatusDot status={analysis.statusByDoc[doc.id]!} className="mt-0.5" />
                     <div>
                       <Link to="/doc/$id" params={{ id: doc.id }} className="font-medium hover:underline">
                         {doc.title}
