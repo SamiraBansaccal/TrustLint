@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input";
 import { DraftMessageButton } from "@/components/trustlint/draft-message";
 import { useTrustLint } from "@/lib/trustlint-context";
 import { formatDate } from "@/lib/checks";
-import { useTeam } from "@/lib/team";
 import { RealReferenceTable } from "@/components/trustlint/real-reference-table";
 
 export const Route = createFileRoute("/reference")({
@@ -41,7 +40,6 @@ function ReferencePage() {
     useTrustLint();
   const { dataset } = useTrustLint();
   const [impact, setImpact] = useState<Impact | null>(null);
-  useTeam();
 
   const runLegalWatch = () => {
     const { from, to } = simulateLegalWatch();
