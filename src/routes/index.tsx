@@ -44,15 +44,30 @@ export const Route = createFileRoute("/")({
 
 const ISSUE_KINDS = Object.keys(RULES) as IssueKind[];
 
-function Kpi({ label, value, hint }: { label: string; value: string | number; hint?: string }) {
+function Kpi({
+  label,
+  value,
+  hint,
+  tone = "default",
+}: {
+  label: string;
+  value: string | number;
+  hint?: string;
+  tone?: "default" | "bad" | "ok";
+}) {
   return (
-    <Card>
-      <CardContent className="p-5">
-        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
-        <p className="mt-2 font-mono text-3xl font-semibold">{value}</p>
-        {hint ? <p className="mt-1 text-xs text-muted-foreground">{hint}</p> : null}
-      </CardContent>
-    </Card>
+    <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+      <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p
+        className={
+          "mt-1 text-2xl font-bold sm:text-3xl " +
+          (tone === "bad" ? "text-bad" : tone === "ok" ? "text-ok" : "text-primary")
+        }
+      >
+        {value}
+      </p>
+      {hint ? <p className="mt-1 text-[11px] text-muted-foreground">{hint}</p> : null}
+    </div>
   );
 }
 
@@ -106,122 +121,200 @@ function Dashboard() {
     );
   };
 
+  const selects = (
+    <div className="grid grid-cols-2 gap-2 lg:flex lg:flex-wrap">
+      <Select value={status} onValueChange={setStatus}>
+        <SelectTrigger className="w-full lg:w-36">
+          <SelectValue placeholder="Status">
+            {status === "all" ? "All statuses" : status === "red" ? "Red" : "Amber"}
+          </SelectValue>
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All statuses</SelectItem>
+          <SelectItem value="red">Red</SelectItem>
+          <SelectItem value="amber">Amber</SelectItem>
+        </SelectContent>
+      </Select>
+      <Select value={country} onValueChange={setCountry}>
+        <SelectTrigger className="w-full lg:w-36">
+          <SelectValue placeholder="Country">
+            {country === "all" ? "All countries" : country === "unknown" ? "Unknown" : country}
+          </SelectValue>
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All countries</SelectItem>
+          <SelectItem value="BE">BE</SelectItem>
+          <SelectItem value="NL">NL</SelectItem>
+          <SelectItem value="unknown">Unknown</SelectItem>
+        </SelectContent>
+      </Select>
+      <Select value={resolution} onValueChange={setResolutionFilter}>
+        <SelectTrigger className="w-full lg:w-40">
+          <SelectValue placeholder="Resolution">
+            {resolution === "all" ? "Any resolution" : RESOLUTION_LABEL[resolution as ResolutionStatus]}
+          </SelectValue>
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">Any resolution</SelectItem>
+          <SelectItem value="open">Open</SelectItem>
+          <SelectItem value="in_progress">In progress</SelectItem>
+          <SelectItem value="fixed">Fixed</SelectItem>
+        </SelectContent>
+      </Select>
+      <Select value={kind} onValueChange={setKind}>
+        <SelectTrigger className="w-full lg:w-48">
+          <SelectValue placeholder="Issue">
+            {kind === "all" ? "All issue kinds" : RULES[kind as IssueKind].name}
+          </SelectValue>
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All issue kinds</SelectItem>
+          {ISSUE_KINDS.map((k) => (
+            <SelectItem key={k} value={k}>
+              {RULES[k].name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+
   return (
-    <div className="space-y-8">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold">Knowledge lint report</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Every flag below shows its rule, the exact sentence as evidence and who should fix it.
+    <div className="space-y-6 sm:space-y-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-bold tracking-tight text-primary sm:text-3xl">Knowledge lint report</h1>
+          <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+            Every flag shows its rule, the exact sentence as evidence and who should fix it.
           </p>
         </div>
-        <div className="flex flex-col items-end gap-2">
-          <Button onClick={rerun} disabled={running} variant="outline">
+        <div className="flex flex-col gap-2 sm:items-end">
+          <Button onClick={rerun} disabled={running} variant="outline" className="w-full sm:w-auto">
             {running ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
-            Re-run AI extraction on all documents
+            Re-run AI extraction
           </Button>
-          {running ? <Progress value={progress} className="h-1.5 w-64" /> : null}
+          {running ? <Progress value={progress} className="h-1.5 w-full sm:w-64" /> : null}
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5">
         <Kpi label="Documents scanned" value={docs.length} />
         <Kpi label="Flagged" value={analysis.flagged.length} hint="at least one issue" />
-        <Kpi label="Critical" value={critical} hint="red – do not trust" />
+        <Kpi label="Critical" value={critical} hint="red – do not trust" tone="bad" />
         <Kpi label="People to notify" value={contacts.size} hint="distinct contacts" />
-        <Kpi label="Resolved" value={`${fixedCount}/${analysis.flagged.length}`} hint="marked fixed by the legal team" />
+        <Kpi label="Resolved" value={`${fixedCount}/${analysis.flagged.length}`} hint="marked fixed" tone="ok" />
       </div>
 
-      <Card>
-        <CardHeader className="flex flex-wrap items-center justify-between gap-3">
-          <CardTitle className="text-base">Flagged documents, by priority</CardTitle>
-          <div className="flex flex-wrap gap-2">
-            <Select value={status} onValueChange={setStatus}>
-              <SelectTrigger className="w-36">
-                <SelectValue placeholder="Status">
-                  {status === "all" ? "All statuses" : status === "red" ? "Red" : "Amber"}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All statuses</SelectItem>
-                <SelectItem value="red">Red</SelectItem>
-                <SelectItem value="amber">Amber</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={country} onValueChange={setCountry}>
-              <SelectTrigger className="w-36">
-                <SelectValue placeholder="Country">
-                  {country === "all" ? "All countries" : country === "unknown" ? "Unknown" : country}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All countries</SelectItem>
-                <SelectItem value="BE">BE</SelectItem>
-                <SelectItem value="NL">NL</SelectItem>
-                <SelectItem value="unknown">Unknown</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={resolution} onValueChange={setResolutionFilter}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="Resolution">
-                  {resolution === "all" ? "Any resolution" : RESOLUTION_LABEL[resolution as ResolutionStatus]}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Any resolution</SelectItem>
-                <SelectItem value="open">Open</SelectItem>
-                <SelectItem value="in_progress">In progress</SelectItem>
-                <SelectItem value="fixed">Fixed</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={kind} onValueChange={setKind}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Issue">
-                  {kind === "all" ? "All issue kinds" : RULES[kind as IssueKind].name}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All issue kinds</SelectItem>
-                {ISSUE_KINDS.map((k) => (
-                  <SelectItem key={k} value={k}>
-                    {RULES[k].name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </CardHeader>
-        <CardContent className="p-0">
+      <section className="space-y-3">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <h2 className="text-xs font-bold uppercase tracking-widest text-foreground">
+            Flagged documents · by priority
+          </h2>
+          {selects}
+        </div>
+
+        {/* Mobile / tablet: cards */}
+        <div className="space-y-3 md:hidden">
+          {filtered.map((doc) => {
+            const owner = people.find((p) => p.id === doc.owner_id);
+            const st = analysis.statusByDoc[doc.id]!;
+            return (
+              <Link
+                key={doc.id}
+                to="/doc/$id"
+                params={{ id: doc.id }}
+                className={
+                  "block overflow-hidden rounded-xl border border-border border-l-4 bg-card shadow-sm transition-shadow hover:shadow-md " +
+                  (st === "red" ? "border-l-bad" : "border-l-warn")
+                }
+              >
+                <div className="p-4">
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span
+                        className={
+                          "rounded px-2 py-0.5 text-[10px] font-bold uppercase " +
+                          (st === "red" ? "bg-bad/10 text-bad" : "bg-warn/15 text-warn-foreground")
+                        }
+                      >
+                        {st === "red" ? "Critical" : "Check"}
+                      </span>
+                      {newBadges.includes(doc.id) ? (
+                        <Badge className="bg-bad text-bad-foreground text-[10px]">NEW</Badge>
+                      ) : null}
+                    </div>
+                    <span className="font-mono text-xs font-semibold text-primary">
+                      {analysis.priorityByDoc[doc.id]!.toFixed(1)}
+                    </span>
+                  </div>
+                  <h3 className="text-sm font-bold text-primary">{doc.title}</h3>
+                  <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2">
+                    <div>
+                      <p className="text-[10px] uppercase text-muted-foreground">Type</p>
+                      <p className="text-xs font-medium capitalize">{doc.type}</p>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[10px] uppercase text-muted-foreground">Owner</p>
+                      <p className="truncate text-xs font-medium">
+                        {owner ? owner.name : <span className="text-bad">none</span>}
+                        {owner?.status === "left" ? <span className="ml-1 text-bad">(left)</span> : null}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-1">
+                    {analysis.issuesByDoc[doc.id]!.map((issue, idx) => (
+                      <IssueBadge key={`${issue.kind}-${idx}`} issue={issue} />
+                    ))}
+                  </div>
+                </div>
+                <div className="flex items-center justify-between border-t border-border bg-muted/60 px-4 py-2">
+                  <span className="text-[11px] text-muted-foreground">
+                    {doc.views_per_month} views/mo · {doc.country || "no scope"}
+                  </span>
+                  <ResolutionBadge status={resolutionOf(resolutions, doc.id)} />
+                </div>
+              </Link>
+            );
+          })}
+          {filtered.length === 0 ? (
+            <p className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+              No documents match these filters.
+            </p>
+          ) : null}
+        </div>
+
+        {/* Desktop: table */}
+        <div className="hidden overflow-hidden rounded-xl border border-border bg-card shadow-sm md:block">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="border-y border-border bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
+              <thead className="border-b border-border bg-muted text-left text-[11px] uppercase tracking-wide text-muted-foreground">
                 <tr>
-                  <th className="px-5 py-2.5 font-medium">Document</th>
-                  <th className="px-3 py-2.5 font-medium">Owner</th>
-                  <th className="px-3 py-2.5 font-medium">Issues</th>
-                  <th className="px-3 py-2.5 font-medium">Resolution</th>
-                  <th className="px-3 py-2.5 text-right font-medium">Views/mo</th>
-                  <th className="px-5 py-2.5 text-right font-medium">Priority</th>
+                  <th className="px-5 py-3 font-semibold">Document</th>
+                  <th className="px-3 py-3 font-semibold">Owner</th>
+                  <th className="px-3 py-3 font-semibold">Issues</th>
+                  <th className="px-3 py-3 font-semibold">Resolution</th>
+                  <th className="px-3 py-3 text-right font-semibold">Views/mo</th>
+                  <th className="px-5 py-3 text-right font-semibold">Priority</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((doc) => {
                   const owner = people.find((p) => p.id === doc.owner_id);
                   return (
-                    <tr key={doc.id} className="border-b border-border last:border-0 hover:bg-muted/40">
-                      <td className="px-5 py-3">
+                    <tr key={doc.id} className="border-b border-border last:border-0 hover:bg-accent/40">
+                      <td className="px-5 py-3.5">
                         <div className="flex items-start gap-3">
                           <StatusDot status={analysis.statusByDoc[doc.id]!} className="mt-1.5" />
                           <div>
                             <Link
                               to="/doc/$id"
                               params={{ id: doc.id }}
-                              className="font-medium hover:underline"
+                              className="font-semibold text-primary hover:underline"
                             >
                               {doc.title}
                             </Link>
                             <div className="mt-1 flex flex-wrap items-center gap-2">
-                              <Badge variant="secondary" className="font-mono text-[10px]">
+                              <Badge variant="secondary" className="text-[10px] capitalize">
                                 {doc.type}
                               </Badge>
                               <span className="text-xs text-muted-foreground">
@@ -234,7 +327,7 @@ function Dashboard() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-3 py-3 align-top">
+                      <td className="px-3 py-3.5 align-top">
                         <span className="text-xs">
                           {owner ? owner.name : <span className="text-bad">none</span>}
                         </span>
@@ -244,20 +337,20 @@ function Dashboard() {
                           </Badge>
                         ) : null}
                       </td>
-                      <td className="px-3 py-3 align-top">
+                      <td className="px-3 py-3.5 align-top">
                         <div className="flex flex-wrap gap-1">
                           {analysis.issuesByDoc[doc.id]!.map((issue, idx) => (
                             <IssueBadge key={`${issue.kind}-${idx}`} issue={issue} />
                           ))}
                         </div>
                       </td>
-                      <td className="px-3 py-3 align-top">
+                      <td className="px-3 py-3.5 align-top">
                         <ResolutionBadge status={resolutionOf(resolutions, doc.id)} />
                       </td>
-                      <td className="px-3 py-3 text-right align-top font-mono text-xs">
+                      <td className="px-3 py-3.5 text-right align-top font-mono text-xs">
                         {doc.views_per_month}
                       </td>
-                      <td className="px-5 py-3 text-right align-top font-mono font-semibold">
+                      <td className="px-5 py-3.5 text-right align-top font-mono font-bold text-primary">
                         {analysis.priorityByDoc[doc.id]!.toFixed(1)}
                       </td>
                     </tr>
@@ -273,8 +366,9 @@ function Dashboard() {
               </tbody>
             </table>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </section>
+
 
       <Collapsible>
         <CollapsibleTrigger asChild>
