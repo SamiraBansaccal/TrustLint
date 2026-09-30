@@ -25,6 +25,16 @@ interface TrustLintState {
   addDocument: (doc: Doc, claims: Claim[]) => void;
   replaceClaimsForDoc: (docId: string, claims: Claim[]) => void;
   clearNewBadges: () => void;
+  aiRun: AiRunSummary | null;
+  liveDocs: string[];
+  recordAiRun: (summary: AiRunSummary, liveDocIds: string[]) => void;
+}
+
+export interface AiRunSummary {
+  at: Date;
+  docs: number;
+  facts: number;
+  discarded: number;
 }
 
 const TrustLintContext = createContext<TrustLintState | null>(null);
@@ -35,6 +45,8 @@ export function TrustLintProvider({ children }: { children: ReactNode }) {
   const [reference, setReference] = useState<ReferenceEntry[]>(REFERENCE);
   const [newBadges, setNewBadges] = useState<string[]>([]);
   const [dataset, setDataset] = useState<Dataset>("demo");
+  const [aiRun, setAiRun] = useState<AiRunSummary | null>(null);
+  const [liveDocs, setLiveDocs] = useState<string[]>([]);
   const { realReference, realLoaded } = useTeam();
   const realUsable = realReference.length > 0;
   const activeReference: ReferenceEntry[] = dataset === "real" && realUsable ? realReference : reference;
@@ -107,6 +119,13 @@ export function TrustLintProvider({ children }: { children: ReactNode }) {
     setClaims(SEED_CLAIMS);
     setReference(REFERENCE);
     setNewBadges([]);
+    setAiRun(null);
+    setLiveDocs([]);
+  }, []);
+
+  const recordAiRun = useCallback((summary: AiRunSummary, ids: string[]) => {
+    setAiRun(summary);
+    setLiveDocs(ids);
   }, []);
 
   const addDocument = useCallback((doc: Doc, docClaims: Claim[]) => {
@@ -135,6 +154,9 @@ export function TrustLintProvider({ children }: { children: ReactNode }) {
     addDocument,
     replaceClaimsForDoc,
     clearNewBadges,
+    aiRun,
+    liveDocs,
+    recordAiRun,
   };
 
   return <TrustLintContext.Provider value={value}>{children}</TrustLintContext.Provider>;

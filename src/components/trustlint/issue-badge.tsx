@@ -1,7 +1,19 @@
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { RULES } from "@/lib/checks";
 import { cn } from "@/lib/utils";
-import type { Issue } from "@/data/types";
+import type { Issue, IssueKind } from "@/data/types";
+
+export const ISSUE_LABEL: Record<IssueKind, string> = {
+  reference_mismatch: "Outdated value",
+  contradiction: "Contradicts a more reliable source",
+  needs_confirmation: "Newer source disagrees – confirm",
+  conflicting_source: "Another source disagrees",
+  owner_left: "Owner left",
+  no_owner: "No owner",
+  stale: "Not reviewed in time",
+  duplicate: "Duplicate",
+  scope_missing: "Country not stated",
+};
 
 export function issueTone(weight: number): string {
   if (weight >= 4) return "bg-bad/10 text-bad border-bad/30";
@@ -15,11 +27,11 @@ export function IssueBadge({ issue }: { issue: Issue }) {
       <TooltipTrigger asChild>
         <span
           className={cn(
-            "inline-flex cursor-help items-center gap-1 rounded-md border px-2 py-0.5 font-mono text-[11px] font-medium",
+            "inline-flex cursor-help items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] font-medium",
             issueTone(issue.weight),
           )}
         >
-          {RULES[issue.kind].short}
+          {ISSUE_LABEL[issue.kind]}
         </span>
       </TooltipTrigger>
       <TooltipContent className="max-w-xs">
